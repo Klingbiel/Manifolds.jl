@@ -117,6 +117,12 @@ end
 function allocate_result(M::SymmetricPositiveDefinite, ::typeof(zero_vector), p::SPDPoint)
     return allocate_result(M, zero_vector, convert(AbstractMatrix, p))
 end
+function allocate_result(M::SymmetricPositiveDefinite, ::typeof(log), p::SPDPoint, q::SPDPoint)
+    return allocate_result(M, log, convert(AbstractMatrix, p))
+end
+function allocate_result(M::SymmetricPositiveDefinite, ::typeof(inverse_retract), p::SPDPoint, q::SPDPoint)
+    return allocate_result(M, inverse_retract, convert(AbstractMatrix, p))
+end
 function allocate_coordinates(M::SymmetricPositiveDefinite, p::SPDPoint, T, n::Int)
     return allocate_coordinates(M, convert(AbstractMatrix, p), T, n)
 end
