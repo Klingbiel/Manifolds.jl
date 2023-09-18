@@ -2,11 +2,14 @@ include("../utils.jl")
 
 @testset "Probability simplex" begin
     M = ProbabilitySimplex(2)
+    M_euc = MetricManifold(M, EuclideanMetric())
+
     @test M^4 == MultinomialMatrices(3, 4)
     p = [0.1, 0.7, 0.2]
     q = [0.3, 0.6, 0.1]
     X = zeros(3)
     Y = [-0.1, 0.05, 0.05]
+    @test repr(M) == "ProbabilitySimplex(2; boundary=:open)"
     @test is_point(M, p)
     @test_throws DomainError is_point(M, p .+ 1, true)
     @test_throws ManifoldDomainError is_point(M, [0], true)
@@ -49,6 +52,7 @@ include("../utils.jl")
             test_manifold(
                 M,
                 pts,
+                basis_types_to_from=(DefaultOrthonormalBasis(),),
                 test_injectivity_radius=false,
                 test_project_tangent=true,
                 test_musical_isomorphisms=true,
@@ -57,12 +61,31 @@ include("../utils.jl")
                 inverse_retraction_methods=[SoftmaxInverseRetraction()],
                 retraction_methods=[SoftmaxRetraction()],
                 test_inplace=true,
+                vector_transport_methods=[ParallelTransport()],
+                test_rand_point=true,
+                test_rand_tvector=true,
+                rand_tvector_atol_multiplier=20.0,
+            )
+            test_manifold(
+                M_euc,
+                pts,
+                test_exp_log=false,
+                test_injectivity_radius=false,
+                test_project_tangent=true,
+                test_musical_isomorphisms=true,
+                test_vee_hat=false,
+                is_tangent_atol_multiplier=40.0,
+                default_inverse_retraction_method=nothing,
+                test_inplace=false,
+                test_rand_point=true,
+                test_rand_tvector=true,
+                rand_tvector_atol_multiplier=40.0,
             )
         end
     end
 
     @testset "Projection testing" begin
-        p = [1 / 3, 1 / 3, 1 / 3]
+        p = [1 / 2, 1 / 3, 1 / 6]
         q = [0.2, 0.3, 0.5]
         X = log(M, p, q)
         X2 = X .+ 10
@@ -71,9 +94,9 @@ include("../utils.jl")
 
         # Check adaption of metric and representer
         Y1 = change_metric(M, EuclideanMetric(), p, X)
-        @test Y1 == X .* sqrt.(p)
+        @test Y1 ≈ [-0.17062114054478128, 0.04002429219016789, 0.13059684835461377]
         Y2 = change_representer(M, EuclideanMetric(), p, X)
-        @test Y2 == X .* p
+        @test Y2 ≈ [-0.10040964054128285, 0.03818665287320871, 0.06222298766807415]
 
         X = log(M, q, p)
         X2 = X + [1, 2, 3]
@@ -110,5 +133,36 @@ include("../utils.jl")
         @test inner(Mb, p, X, Y) == 8
 
         @test_throws ArgumentError ProbabilitySimplex(2; boundary=:tomato)
+    end
+
+    @testset "Probability amplitudes" begin
+        M = ProbabilitySimplex(2)
+        p = [0.1, 0.7, 0.2]
+        Y = [-0.1, 0.05, 0.05]
+        @test Manifolds.simplex_to_amplitude(M, p) ≈
+              [0.31622776601683794, 0.8366600265340756, 0.4472135954999579]
+        @test Manifolds.amplitude_to_simplex(
+            M,
+            [0.31622776601683794, 0.8366600265340756, 0.4472135954999579],
+        ) ≈ p
+        @test Manifolds.simplex_to_amplitude_diff(M, p, Y) ≈
+              [-0.31622776601683794, 0.05976143046671968, 0.1118033988749895]
+        @test Manifolds.amplitude_to_simplex_diff(M, p, Y) ≈ [-0.01, 0.035, 0.01]
+    end
+
+    @testset "other metric" begin
+        p = [0.1, 0.7, 0.2]
+        X = [-0.1, 0.05, 0.05]
+        Y = [0.05, 0.05, -0.1]
+        Z = [-0.1, 0.15, -0.05]
+        @test riemann_tensor(M, p, X, Y, Z) ≈
+              [-0.0034821428571428577, -0.005625, 0.009107142857142857]
+    end
+
+    @testset "Volume density" begin
+        @test manifold_volume(M) ≈ pi / 2
+        @test volume_density(M, p, Y) ≈ 0.986956111346216
+        @test manifold_volume(M_euc) ≈ sqrt(3) / 2
+        @test volume_density(M_euc, p, Y) ≈ 1.0
     end
 end

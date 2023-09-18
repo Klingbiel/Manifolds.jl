@@ -29,7 +29,7 @@ const SpecialEuclidean{N} = SemidirectProductGroup{
     ℝ,
     TranslationGroup{Tuple{N},ℝ},
     SpecialOrthogonal{N},
-    RotationAction{TranslationGroup{Tuple{N},ℝ},SpecialOrthogonal{N},LeftAction},
+    RotationAction{TranslationGroup{Tuple{N},ℝ},SpecialOrthogonal{N},LeftForwardAction},
 }
 
 const SpecialEuclideanManifold{N} =
@@ -43,7 +43,7 @@ function SpecialEuclidean(n)
 end
 
 const SpecialEuclideanOperation{N} = SemidirectProductOperation{
-    RotationAction{TranslationGroup{Tuple{N},ℝ},SpecialOrthogonal{N},LeftAction},
+    RotationAction{TranslationGroup{Tuple{N},ℝ},SpecialOrthogonal{N},LeftForwardAction},
 }
 const SpecialEuclideanIdentity{N} = Identity{SpecialEuclideanOperation{N}}
 
@@ -151,13 +151,10 @@ R & t \\
 ````
 
 This function embeds $\mathrm{SE}(n)$ in the general linear group $\mathrm{GL}(n+1)$.
-It is an isometric embedding and group homomorphism [^RicoMartinez1988].
+It is an isometric embedding and group homomorphism [RicoMartinez:1988](@cite).
 
 See also [`screw_matrix`](@ref) for matrix representations of the Lie algebra.
 
-[^RicoMartinez1988]:
-    > Rico Martinez, J. M., “Representations of the Euclidean group and its applications
-    > to the kinematics of spatial chains,” PhD Thesis, University of Florida, 1988.
 """
 function affine_matrix(G::SpecialEuclidean{n}, p) where {n}
     pis = submanifold_components(G, p)
@@ -585,7 +582,7 @@ function lie_bracket!(G::SpecialEuclidean, Z, X, Y)
 end
 
 """
-    translate_diff(G::SpecialEuclidean, p, q, X, ::RightAction)
+    translate_diff(G::SpecialEuclidean, p, q, X, ::RightBackwardAction)
 
 Differential of the right action of the [`SpecialEuclidean`](@ref) group on itself.
 The formula for the rotation part is the differential of the right rotation action, while
@@ -596,9 +593,9 @@ R_q⋅X_R⋅t_p + X_t
 where ``R_q`` is the rotation part of `q`, ``X_R`` is the rotation part of `X`, ``t_p``
 is the translation part of `p` and ``X_t`` is the translation part of `X`.
 """
-translate_diff(G::SpecialEuclidean, p, q, X, ::RightAction)
+translate_diff(G::SpecialEuclidean, p, q, X, ::RightBackwardAction)
 
-function translate_diff!(G::SpecialEuclidean, Y, p, q, X, ::RightAction)
+function translate_diff!(G::SpecialEuclidean, Y, p, q, X, ::RightBackwardAction)
     np, hp = submanifold_components(G, p)
     nq, hq = submanifold_components(G, q)
     nX, hX = submanifold_components(G, X)

@@ -65,20 +65,7 @@ The exponential map is
 ````
 
 where ``\operatorname{Exp}(⋅)`` denotes the matrix exponential, and ``⋅^\mathrm{H}`` is
-the conjugate transpose. [^AndruchowLarotondaRechtVarela2014][^MartinNeff2016]
-
-[^AndruchowLarotondaRechtVarela2014]:
-    > Andruchow E., Larotonda G., Recht L., and Varela A.:
-    > “The left invariant metric in the general linear group”,
-    > Journal of Geometry and Physics 86, pp. 241-257, 2014.
-    > doi: [10.1016/j.geomphys.2014.08.009](https://doi.org/10.1016/j.geomphys.2014.08.009),
-    > arXiv: [1109.0520v1](https://arxiv.org/abs/1109.0520v1).
-[^MartinNeff2016]:
-    > Martin, R. J. and Neff, P.:
-    > “Minimal geodesics on GL(n) for left-invariant, right-O(n)-invariant Riemannian metrics”,
-    > Journal of Geometric Mechanics 8(3), pp. 323-357, 2016.
-    > doi: [10.3934/jgm.2016010](https://doi.org/10.3934/jgm.2016010),
-    > arXiv: [1409.7849v2](https://arxiv.org/abs/1409.7849v2).
+the conjugate transpose [AndruchowLarotondaRechtVarela:2014](@cite) [MartinNeff:2016](@cite).
 """
 function exp(M::GeneralLinear, p, X)
     q = similar(p)
@@ -165,8 +152,8 @@ exp_lie!(::GeneralLinear{2}, q, X) = copyto!(q, exp(SizedMatrix{2,2}(X)))
 
 inner(::GeneralLinear, p, X, Y) = dot(X, Y)
 
-inverse_translate_diff(::GeneralLinear, p, q, X, ::LeftAction) = X
-inverse_translate_diff(::GeneralLinear, p, q, X, ::RightAction) = p * X / p
+inverse_translate_diff(::GeneralLinear, p, q, X, ::LeftForwardAction) = X
+inverse_translate_diff(::GeneralLinear, p, q, X, ::RightBackwardAction) = p * X / p
 
 function inverse_translate_diff!(G::GeneralLinear, Y, p, q, X, conv::ActionDirection)
     return copyto!(Y, inverse_translate_diff(G, p, q, X, conv))
@@ -203,7 +190,7 @@ function log(M::GeneralLinear, p, q)
 end
 
 function log!(G::GeneralLinear{n,𝔽}, X, p, q) where {n,𝔽}
-    pinvq = inverse_translate(G, p, q, LeftAction())
+    pinvq = inverse_translate(G, p, q, LeftForwardAction())
     𝔽 === ℝ && det(pinvq) ≤ 0 && throw(OutOfInjectivityRadiusError())
     if isnormal(pinvq; atol=sqrt(eps(real(eltype(pinvq)))))
         log_safe!(X, pinvq)
@@ -218,7 +205,7 @@ function log!(G::GeneralLinear{n,𝔽}, X, p, q) where {n,𝔽}
         inverse_retract!(Gᵣ, Xᵣ, Identity(G), pinvqᵣ, inverse_retraction)
         unrealify!(X, Xᵣ, 𝔽, n)
     end
-    translate_diff!(G, X, p, Identity(G), X, LeftAction())
+    translate_diff!(G, X, p, Identity(G), X, LeftForwardAction())
     return X
 end
 function log!(::GeneralLinear{1}, X, p, q)
@@ -268,8 +255,8 @@ end
 
 Base.show(io::IO, ::GeneralLinear{n,𝔽}) where {n,𝔽} = print(io, "GeneralLinear($n, $𝔽)")
 
-translate_diff(::GeneralLinear, p, q, X, ::LeftAction) = X
-translate_diff(::GeneralLinear, p, q, X, ::RightAction) = p \ X * p
+translate_diff(::GeneralLinear, p, q, X, ::LeftForwardAction) = X
+translate_diff(::GeneralLinear, p, q, X, ::RightBackwardAction) = p \ X * p
 
 function translate_diff!(G::GeneralLinear, Y, p, q, X, conv::ActionDirection)
     return copyto!(Y, translate_diff(G, p, q, X, conv))

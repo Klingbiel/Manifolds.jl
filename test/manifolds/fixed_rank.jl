@@ -87,6 +87,8 @@ include("../utils.jl")
         q2 = similar(q)
         embed!(M, q2, p)
         @test q == q2
+
+        @test injectivity_radius(M2) == 0.0
     end
     types = [[Matrix{Float64}, Vector{Float64}, Matrix{Float64}]]
     TEST_FLOAT32 && push!(types, [Matrix{Float32}, Vector{Float32}, Matrix{Float32}])
@@ -227,5 +229,14 @@ include("../utils.jl")
                 test_rand_tvector=true,
             )
         end
+    end
+    @testset "Riemannian Hessian" begin
+        M = FixedRankMatrices(3, 2, 2)
+        pE = [1.0 0.0; 0.0 1.0; 0.0 0.0]
+        p = SVDMPoint(pE)
+        X = UMVTVector([0.0 0.0; 0.0 0.0; 1.0 1.0], [1.0 0.0; 0.0 1.0], [1.0 0.0; 0.0 1.0])
+        G = [1.0 0.0; 0.0 2.0; 0.0 0.0]
+        H = [0.0 3.0; 0.0 4.0; 0.0 1.0]
+        @test is_vector(M, p, riemannian_Hessian(M, p, G, H, X))
     end
 end

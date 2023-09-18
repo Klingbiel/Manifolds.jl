@@ -28,17 +28,11 @@ simplex in the $n$-sphere of radius 2.
 The corresponding diffeomorphism $\varphi: \mathbb Δ^n → \mathcal N$,
 where $\mathcal N \subset 2𝕊^n$ is given by $\varphi(p) = 2\sqrt{p}$.
 
-This implementation follows the notation in [^ÅströmPetraSchmitzerSchnörr2017].
+This implementation follows the notation in [AastroemPetraSchmitzerSchnoerr:2017](@cite).
 
 # Constructor
 
     ProbabilitySimplex(n::Int; boundary::Symbol=:open)
-
-[^ÅströmPetraSchmitzerSchnörr2017]:
-    > F. Åström, S. Petra, B. Schmitzer, C. Schnörr: “Image Labeling by Assignment”,
-    > Journal of Mathematical Imaging and Vision, 58(2), pp. 221–238, 2017.
-    > doi: [10.1007/s10851-016-0702-4](https://doi.org/10.1007/s10851-016-0702-4)
-    > arxiv: [1603.05285](https://arxiv.org/abs/1603.05285).
 """
 struct ProbabilitySimplex{n,boundary} <: AbstractDecoratorManifold{ℝ} end
 
@@ -70,38 +64,29 @@ active_traits(f, ::ProbabilitySimplex, args...) = merge_traits(IsEmbeddedManifol
     change_representer(M::ProbabilitySimplex, ::EuclideanMetric, p, X)
 
 Given a tangent vector with respect to the metric from the embedding, the [`EuclideanMetric`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/manifolds.html#ManifoldsBase.EuclideanMetric),
-the representer of a linear functional on the tangent space is adapted as ``Z = p .* X``, since
-this “compensates” for the divsion by ``p`` in the Riemannian metric on the [`ProbabilitySimplex`](@ref).
+the representer of a linear functional on the tangent space is adapted as ``Z = p .* X .- p .* dot(p, X)``.
+The first part “compensates” for the divsion by ``p`` in the Riemannian metric on the [`ProbabilitySimplex`](@ref)
+and the second part performs appropriate projection to keep the vector tangent.
 
-To be precise for any ``Y ∈ T_pΔ^n`` we are looking for ``Z ∈ T_pΔ^n`` such that
-
-```math
-    ⟨X,Y⟩ = X^\mathrm{T}Y = \sum_{i=1}^{n+1}\frac{Z_iY_i}{p_i} = g_p(Z,Y)
-```
-
-and hence ``Z_i = X_ip_i, i=1,…,n+1``.
+For details see Proposition 2.3 in [AastroemPetraSchmitzerSchnoerr:2017](@cite).
 """
 change_representer(::ProbabilitySimplex, ::EuclideanMetric, ::Any, ::Any)
 
 function change_representer!(::ProbabilitySimplex, Y, ::EuclideanMetric, p, X)
-    return Y .= p .* X
+    return Y .= p .* X .- p .* dot(p, X)
 end
 
 @doc raw"""
     change_metric(M::ProbabilitySimplex, ::EuclideanMetric, p, X)
 
 To change the metric, we are looking for a function ``c\colon T_pΔ^n \to T_pΔ^n`` such that for all ``X,Y ∈ T_pΔ^n``
-
-```math
-    ⟨X,Y⟩ = X^\mathrm{T}Y = \sum_{i=1}^{n+1}\frac{c(X)_ic(Y)_i}{p_i} = g_p(X,Y)
-```
-
-and hence ``C(X)_i = X_i\sqrt{p_i}, i=1,…,n+1``.
+This can be achieved by rewriting representer change in matrix form as `(Diagonal(p) - p * p') * X`
+and taking square root of the matrix
 """
 change_metric(::ProbabilitySimplex, ::EuclideanMetric, ::Any, ::Any)
 
 function change_metric!(::ProbabilitySimplex, Y, ::EuclideanMetric, p, X)
-    return Y .= sqrt.(p) .* X
+    return Y .= sqrt(Diagonal(p) - p * p') * X
 end
 
 """
@@ -145,16 +130,14 @@ function check_vector(M::ProbabilitySimplex, p, X; kwargs...)
     if !isapprox(sum(X), 0.0; kwargs...)
         return DomainError(
             sum(X),
-            "The vector $(X) is not a tangent vector to $(p) on $(M), since its elements to not sum up to 0.",
+            "The vector $(X) is not a tangent vector to $(p) on $(M), since its elements do not sum up to 0.",
         )
     end
     return nothing
 end
 
-get_embedding(M::ProbabilitySimplex) = Euclidean(representation_size(M)...; field=ℝ)
-
 @doc raw"""
-    distance(M,p,q)
+    distance(M, p, q)
 
 Compute the distance between two points on the [`ProbabilitySimplex`](@ref) `M`.
 The formula reads
@@ -174,7 +157,7 @@ embed(::ProbabilitySimplex, p) = p
 embed(::ProbabilitySimplex, p, X) = X
 
 @doc raw"""
-    exp(M::ProbabilitySimplex,p,X)
+    exp(M::ProbabilitySimplex, p, X)
 
 Compute the exponential map on the probability simplex.
 
@@ -197,10 +180,41 @@ function exp!(::ProbabilitySimplex, q, p, X)
     return q
 end
 
-@doc raw"""
-    injectivity_radius(M,p)
+function get_coordinates_orthonormal!(
+    M::ProbabilitySimplex{N},
+    Xc,
+    p,
+    X,
+    R::RealNumbers,
+) where {N}
+    get_coordinates_orthonormal!(
+        Sphere(N),
+        Xc,
+        simplex_to_amplitude(M, p),
+        simplex_to_amplitude_diff(M, p, X),
+        R,
+    )
+    return Xc
+end
 
-compute the injectivity radius on the [`ProbabilitySimplex`](@ref) `M` at the point `p`,
+get_embedding(M::ProbabilitySimplex) = Euclidean(representation_size(M)...; field=ℝ)
+
+function get_vector_orthonormal!(
+    M::ProbabilitySimplex{N},
+    Y,
+    p,
+    Xc,
+    R::RealNumbers,
+) where {N}
+    ps = simplex_to_amplitude(M, p)
+    X = get_vector_orthonormal(Sphere(N), ps, Xc, R)
+    return amplitude_to_simplex_diff!(M, Y, ps, X)
+end
+
+@doc raw"""
+    injectivity_radius(M, p)
+
+Compute the injectivity radius on the [`ProbabilitySimplex`](@ref) `M` at the point `p`,
 i.e. the distanceradius to a point near/on the boundary, that could be reached by following the
 geodesic.
 """
@@ -224,13 +238,7 @@ Compute the inner product of two tangent vectors `X`, `Y` from the tangent space
 g_p(X,Y) = \sum_{i=1}^{n+1}\frac{X_iY_i}{p_i}
 ````
 When `M` includes boundary, we can just skip coordinates where ``p_i`` is equal to 0, see
-Proposition 2.1 in [^AyJostLeSchwachhöfer2017].
-
-[^AyJostLeSchwachhöfer2017]:
-    > N. Ay, J. Jost, H. V. Le, and L. Schwachhöfer, Information Geometry. in Ergebnisse der
-    > Mathematik und ihrer Grenzgebiete. 3. Folge / A Series of Modern Surveys in
-    > Mathematics. Springer International Publishing, 2017.
-    > doi: [10.1007/978-3-319-56478-4](https://doi.org/10.1007/978-3-319-56478-4)
+Proposition 2.1 in [AyJostLeSchwachhoefer:2017](@cite).
 """
 function inner(::ProbabilitySimplex{n,boundary}, p, X, Y) where {n,boundary}
     d = zero(Base.promote_eltype(p, X, Y))
@@ -308,6 +316,15 @@ Returns the manifold dimension of the probability simplex in $ℝ^{n+1}$, i.e.
 manifold_dimension(::ProbabilitySimplex{n}) where {n} = n
 
 @doc raw"""
+    manifold_volume(::ProbabilitySimplex{n}) where {n}
+
+Return the volume of the [`ProbabilitySimplex`](@ref), i.e. volume of the `n`-dimensional
+[`Sphere`](@ref) divided by ``2^{n+1}``, corresponding to the volume of its positive
+orthant.
+"""
+manifold_volume(::ProbabilitySimplex{n}) where {n} = manifold_volume(Sphere(n)) / 2^(n + 1)
+
+@doc raw"""
     mean(
         M::ProbabilitySimplex,
         x::AbstractVector,
@@ -323,21 +340,65 @@ mean(::ProbabilitySimplex, ::Any...)
 
 default_estimation_method(::ProbabilitySimplex, ::typeof(mean)) = GeodesicInterpolation()
 
+function parallel_transport_to!(M::ProbabilitySimplex{N}, Y, p, X, q) where {N}
+    q_s = simplex_to_amplitude(M, q)
+    Ys = parallel_transport_to(
+        Sphere(N),
+        simplex_to_amplitude(M, p),
+        simplex_to_amplitude_diff(M, p, X),
+        q_s,
+    )
+    return amplitude_to_simplex_diff!(M, Y, q_s, Ys)
+end
+
+@doc raw"""
+    rand(::ProbabilitySimplex; vector_at=nothing, σ::Real=1.0)
+
+
+When `vector_at` is `nothing`, return a random (uniform over the Fisher-Rao metric; that is, uniform with respect to the `n`-sphere whose positive orthant is mapped to the simplex).
+point `x` on the [`ProbabilitySimplex`](@ref) manifold `M` according to the isometric embedding into
+the `n`-sphere by normalizing the vector length of a sample from a multivariate Gaussian. See [Marsaglia:1972](@cite).
+
+When `vector_at` is not `nothing`, return a (Gaussian) random vector from the tangent space
+``T_{p}\mathrm{\Delta}^n``by shifting a multivariate Gaussian with standard deviation `σ`
+to have a zero component sum.
+"""
+rand(::ProbabilitySimplex; σ::Real=1.0)
+
+function Random.rand!(
+    rng::AbstractRNG,
+    M::ProbabilitySimplex,
+    pX;
+    vector_at=nothing,
+    σ=one(eltype(pX)),
+)
+    if isnothing(vector_at)
+        Random.randn!(rng, pX)
+        LinearAlgebra.normalize!(pX, 2)
+        pX .= abs2.(pX)
+    else
+        Random.randn!(rng, pX)
+        pX .= (pX .- mean(pX)) .* σ
+        change_metric!(M, pX, EuclideanMetric(), vector_at, pX)
+    end
+    return pX
+end
+
 @doc raw"""
     project(M::ProbabilitySimplex, p, Y)
 
-project `Y` from the embedding onto the tangent space at `p` on
+Project `Y` from the embedding onto the tangent space at `p` on
 the [`ProbabilitySimplex`](@ref) `M`. The formula reads
 
 ````math
-\operatorname{proj}_{Δ^n}(p,Y) = Y - ⟨\mathbb 1,Y⟩p,
-````
-where ``\mathbb 1 ∈ ℝ`` denotes the vector of ones.
+\operatorname{proj}_{Δ^n}(p,Y) = Y - \bar{Y}
+```
+where ``\bar{Y}`` denotes mean of ``Y``.
 """
 project(::ProbabilitySimplex, ::Any, ::Any)
 
 function project!(::ProbabilitySimplex, X, p, Y)
-    X .= Y .- sum(Y) .* p
+    X .= Y .- mean(Y)
     return X
 end
 
@@ -371,7 +432,7 @@ end
 @doc raw"""
     representation_size(::ProbabilitySimplex{n})
 
-return the representation size of points in the $n$-dimensional probability simplex,
+Return the representation size of points in the $n$-dimensional probability simplex,
 i.e. an array size of `(n+1,)`.
 """
 representation_size(::ProbabilitySimplex{n}) where {n} = (n + 1,)
@@ -421,16 +482,112 @@ function riemannian_gradient!(M::ProbabilitySimplex, X, p, Y; kwargs...)
     return X
 end
 
+@doc raw"""
+    riemann_tensor(::ProbabilitySimplex, p, X, Y, Z)
+
+Compute the Riemann tensor ``R(X,Y)Z`` at point `p` on [`ProbabilitySimplex`](@ref) `M`.
+It is computed using isometry with positive orthant of a sphere.
+"""
+riemann_tensor(::ProbabilitySimplex, p, X, Y, Z)
+
+function riemann_tensor!(M::ProbabilitySimplex{N}, Xresult, p, X, Y, Z) where {N}
+    pe = simplex_to_amplitude(M, p)
+    Xrs = riemann_tensor(
+        Sphere(N),
+        pe,
+        simplex_to_amplitude_diff(M, p, X),
+        simplex_to_amplitude_diff(M, p, Y),
+        simplex_to_amplitude_diff(M, p, Z),
+    )
+    amplitude_to_simplex_diff!(M, Xresult, pe, Xrs)
+    return Xresult
+end
+
 function Base.show(io::IO, ::ProbabilitySimplex{n,boundary}) where {n,boundary}
-    return print(io, "ProbabilitySimplex($(n); boundary=$boundary)")
+    return print(io, "ProbabilitySimplex($(n); boundary=:$boundary)")
+end
+
+@doc raw"""
+    volume_density(M::ProbabilitySimplex{N}, p, X) where {N}
+
+Compute the volume density at point `p` on [`ProbabilitySimplex`](@ref) `M` for tangent
+vector `X`. It is computed using isometry with positive orthant of a sphere.
+"""
+function volume_density(M::ProbabilitySimplex{N}, p, X) where {N}
+    pe = simplex_to_amplitude(M, p)
+    return volume_density(Sphere(N), pe, simplex_to_amplitude_diff(M, p, X))
 end
 
 @doc raw"""
     zero_vector(M::ProbabilitySimplex, p)
 
-returns the zero tangent vector in the tangent space of the point `p`  from the
+Return the zero tangent vector in the tangent space of the point `p`  from the
 [`ProbabilitySimplex`](@ref) `M`, i.e. its representation by the zero vector in the embedding.
 """
 zero_vector(::ProbabilitySimplex, ::Any)
 
 zero_vector!(::ProbabilitySimplex, X, p) = fill!(X, 0)
+
+@doc raw"""
+    simplex_to_amplitude(M::ProbabilitySimplex, p)
+
+Convert point `p` on [`ProbabilitySimplex`](@ref Manifolds.ProbabilitySimplex) to (real) probability amplitude. The
+formula reads ``(\sqrt{p_1}, \sqrt{p_2}, …, \sqrt{p_{N+1}})``. This is an isometry from the
+interior of the probability simplex to the interior of the positive orthant of a sphere.
+"""
+function simplex_to_amplitude(M::ProbabilitySimplex, p)
+    return simplex_to_amplitude!(M, similar(p), p)
+end
+
+function simplex_to_amplitude!(::ProbabilitySimplex, q, p)
+    q .= sqrt.(p)
+    return q
+end
+
+@doc raw"""
+    amplitude_to_simplex(M::ProbabilitySimplex{N}, p) where {N}
+
+Convert point (real) probability amplitude `p` on to a point on [`ProbabilitySimplex`](@ref Manifolds.ProbabilitySimplex).
+The formula reads ``(p_1^2, p_2^2, …, p_{N+1}^2)``. This is an isometry from the interior of
+the positive orthant of a sphere to interior of the probability simplex.
+"""
+function amplitude_to_simplex(M::ProbabilitySimplex, p)
+    return amplitude_to_simplex!(M, similar(p), p)
+end
+
+function amplitude_to_simplex!(::ProbabilitySimplex, q, p)
+    q .= p .^ 2
+    return q
+end
+
+@doc raw"""
+    simplex_to_amplitude_diff(M::ProbabilitySimplex, p, X)
+
+Compute differential of [`simplex_to_amplitude`](@ref Manifolds.simplex_to_amplitude) of a point on `p` one
+[`ProbabilitySimplex`](@ref) at tangent vector `X` from the tangent space at `p` from
+a sphere.
+"""
+function simplex_to_amplitude_diff(M::ProbabilitySimplex, p, X)
+    return simplex_to_amplitude_diff!(M, similar(X), p, X)
+end
+
+function simplex_to_amplitude_diff!(::ProbabilitySimplex, Y, p, X)
+    Y .= X ./ sqrt.(p)
+    return Y
+end
+
+@doc raw"""
+    amplitude_to_simplex_diff(M::ProbabilitySimplex, p, X)
+
+Compute differential of [`amplitude_to_simplex`](@ref Manifolds.amplitude_to_simplex) of a point `p` on
+[`ProbabilitySimplex`](@ref) at tangent vector `X` from the tangent space at `p` from
+a sphere.
+"""
+function amplitude_to_simplex_diff(M::ProbabilitySimplex, p, X)
+    return amplitude_to_simplex_diff!(M, similar(X), p, X)
+end
+
+function amplitude_to_simplex_diff!(::ProbabilitySimplex, Y, p, X)
+    Y .= p .* X
+    return Y
+end

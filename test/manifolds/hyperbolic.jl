@@ -328,4 +328,33 @@ include("../utils.jl")
         A = change_metric(M, MinkowskiMetric(), p, X)
         @test A == X
     end
+    @testset "ManifoldDiff" begin
+        # ManifoldDiff
+        M = Hyperbolic(2)
+        p = [1.0, 1.0, sqrt(3)]
+        X = [1.0, 2.0, sqrt(3)]
+        dpX = ManifoldDiff.diagonalizing_projectors(M, p, X)
+        @test dpX[1][1] == 0.0
+        @test dpX[1][2].X == 2 * normalize(X)
+        @test dpX[2][1] == -1.0
+        @test dpX[2][2].X == 2 * normalize(X)
+    end
+    @testset "Riemannian Hessian" begin
+        M = Hyperbolic(2)
+        p = [0.0, 0.0, 1.0]
+        G = [1.0, 0.2, 0.3]
+        H = [2.0, 0.3, 0.4]
+        X = [0.3, 0.4, 0.0]
+        D = diagm([1.0, 1.0, -1.0])
+        rH = project(M, p, D * H + dot(p, D * G) .* X)
+        @test riemannian_Hessian(M, p, G, H, X) == rH
+    end
+    @testset "Manifold volume" begin
+        M = Hyperbolic(2)
+        @test manifold_volume(M) == Inf
+        p = [1.0, 1.0, sqrt(3)]
+        X = [1.0, 2.0, sqrt(3)]
+        @test volume_density(M, p, X) ≈ 2.980406103535168
+        @test volume_density(M, p, [0.0, 0.0, 0.0]) ≈ 1.0
+    end
 end

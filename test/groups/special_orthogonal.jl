@@ -39,8 +39,9 @@ include("group_utils.jl")
             gpts = convert.(T, pts)
             Xgpts = convert.(T, Xpts)
             @test compose(G, gpts[1], gpts[2]) ≈ gpts[1] * gpts[2]
-            @test translate_diff(G, gpts[2], gpts[1], Xgpts[1], LeftAction()) ≈ Xgpts[1]
-            @test translate_diff(G, gpts[2], gpts[1], Xgpts[1], RightAction()) ≈
+            @test translate_diff(G, gpts[2], gpts[1], Xgpts[1], LeftForwardAction()) ≈
+                  Xgpts[1]
+            @test translate_diff(G, gpts[2], gpts[1], Xgpts[1], RightBackwardAction()) ≈
                   transpose(gpts[2]) * Xgpts[1] * gpts[2]
             test_group(
                 G,
@@ -70,15 +71,15 @@ include("group_utils.jl")
             retraction_methods = [
                 Manifolds.PolarRetraction(),
                 Manifolds.QRRetraction(),
-                Manifolds.GroupExponentialRetraction(LeftAction()),
-                Manifolds.GroupExponentialRetraction(RightAction()),
+                Manifolds.GroupExponentialRetraction(LeftForwardAction()),
+                Manifolds.GroupExponentialRetraction(RightBackwardAction()),
             ]
 
             inverse_retraction_methods = [
                 Manifolds.PolarInverseRetraction(),
                 Manifolds.QRInverseRetraction(),
-                Manifolds.GroupLogarithmicInverseRetraction(LeftAction()),
-                Manifolds.GroupLogarithmicInverseRetraction(RightAction()),
+                Manifolds.GroupLogarithmicInverseRetraction(LeftForwardAction()),
+                Manifolds.GroupLogarithmicInverseRetraction(RightBackwardAction()),
             ]
 
             test_manifold(
@@ -180,5 +181,40 @@ include("group_utils.jl")
             @test !is_vector(G, gI, ones(n, n)) #not skew
             @test !is_vector(G, gI, ones(n)) # wrong size
         end
+    end
+
+    @testset "differentials" begin
+        G = SpecialOrthogonal(3)
+        p = Matrix(I, 3, 3)
+
+        ω = [[1.0, 2.0, 3.0], [3.0, 2.0, 1.0], [1.0, 3.0, 2.0]]
+        pts = [exp(G, p, hat(G, p, ωi)) for ωi in ω]
+        Xpts = [hat(G, p, [-1.0, 2.0, 0.5]), hat(G, p, [1.0, 0.0, 0.5])]
+
+        q2 = exp(G, pts[1], Xpts[2])
+        @test isapprox(
+            G,
+            q2,
+            ManifoldDiff.differential_exp_argument_lie_approx(
+                G,
+                pts[1],
+                Xpts[1],
+                Xpts[2];
+                n=0,
+            ),
+            Xpts[2],
+        )
+        diff_ref = [
+            0.0 -0.7482721017619345 -0.508151233069837
+            0.7482721017619345 0.0 -0.10783358474129323
+            0.508151233069837 0.10783358474129323 0.0
+        ]
+        @test isapprox(
+            G,
+            q2,
+            ManifoldDiff.differential_exp_argument_lie_approx(G, pts[1], Xpts[1], Xpts[2]),
+            diff_ref;
+            atol=1e-12,
+        )
     end
 end

@@ -342,4 +342,41 @@ using Manifolds: induced_basis
         M = Euclidean(4)
         @test_throws DimensionMismatch distance(M, [1, 2, 3, 4], [1 2; 3 4])
     end
+
+    @testset "ManifoldDiff" begin
+        # ManifoldDiff
+        M0 = Euclidean()
+        @test ManifoldDiff.adjoint_Jacobi_field(
+            M0,
+            0.0,
+            1.0,
+            0.5,
+            2.0,
+            ManifoldDiff.βdifferential_shortest_geodesic_startpoint,
+        ) === 2.0
+        @test ManifoldDiff.diagonalizing_projectors(M0, 0.0, 2.0) ==
+              ((0.0, ManifoldDiff.IdentityProjector()),)
+        @test ManifoldDiff.jacobi_field(
+            M0,
+            0.0,
+            1.0,
+            0.5,
+            2.0,
+            ManifoldDiff.βdifferential_shortest_geodesic_startpoint,
+        ) === 2.0
+    end
+
+    @testset "Weingarten & Hessian" begin
+        M = Euclidean(2)
+        p = [1.0, 2.0]
+        G = [3.0, 4.0]
+        H = [5.0, 6.0]
+        X = [7.0, 8.0]
+        rH = riemannian_Hessian(M, p, G, H, X)
+        @test rH == H
+    end
+    @testset "Volume" begin
+        @test manifold_volume(Euclidean(2)) == Inf
+        @test volume_density(E, p, X) == 1.0
+    end
 end

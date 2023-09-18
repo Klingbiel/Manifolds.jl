@@ -9,3 +9,8 @@ docs/src/tutorials/*.md
 .CondaPkg
 coverage
 *.cov
+tutorials/_freeze
+accuracy/*_files
+accuracy/_freeze
+accuracy/.quarto
+docs/src/tutorials/hand-gestures_files/figure-commonmark

@@ -95,6 +95,30 @@ using Manifolds: TFVector, CoTFVector
         # isapprox for 1-element vectors
         @test isapprox(M, [1.0], [1.0])
         @test isapprox(M, [0.0], [1.0], [1.0])
+
+        # ManifoldDiff
+        @test ManifoldDiff.adjoint_Jacobi_field(
+            M,
+            0.0,
+            1.0,
+            0.5,
+            2.0,
+            ManifoldDiff.βdifferential_shortest_geodesic_startpoint,
+        ) === 2.0
+        @test ManifoldDiff.diagonalizing_projectors(M, 0.0, 2.0) ==
+              ((0.0, ManifoldDiff.ProjectorOntoVector(M, 0.0, SA[1.0])),)
+        @test ManifoldDiff.jacobi_field(
+            M,
+            0.0,
+            1.0,
+            0.5,
+            2.0,
+            ManifoldDiff.βdifferential_shortest_geodesic_startpoint,
+        ) === 2.0
+
+        # volume
+        @test manifold_volume(M) ≈ 2 * π
+        @test volume_density(M, 0.0, 2.0) == 1.0
     end
     TEST_STATIC_SIZED && @testset "Real Circle and static sized arrays" begin
         X = @MArray fill(0.0)
@@ -216,6 +240,10 @@ using Manifolds: TFVector, CoTFVector
         @test mean(Mc, angles, [1.0, 1.0, 1.0]) ≈ exp(-π * im / 2)
         @test_throws ErrorException mean(Mc, [-1.0 + 0im, 1.0 + 0im])
         @test_throws ErrorException mean(Mc, [-1.0 + 0im, 1.0 + 0im], [1.0, 1.0])
+
+        # volume
+        @test manifold_volume(Mc) ≈ 2 * π
+        @test volume_density(Mc, 1.0 + 0.0im, 2im) == 1.0
     end
     types = [Complex{Float64}]
     TEST_FLOAT32 && push!(types, Complex{Float32})

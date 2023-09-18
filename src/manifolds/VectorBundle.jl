@@ -85,7 +85,7 @@ TangentSpaceAtPoint(M::AbstractManifold, p) = VectorSpaceAtPoint(TangentBundleFi
 """
     TangentSpace(M::AbstractManifold, p)
 
-Return a [`TangentSpaceAtPoint`](@ref Manifolds.TangentSpaceAtPoint) representing tangent space at `p` on the [`AbstractManifold`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/types.html#ManifoldsBase.AbstractManifold) `M`.
+Return a [`TangentSpaceAtPoint`](@ref) representing tangent space at `p` on the [`AbstractManifold`](https://juliamanifolds.github.io/ManifoldsBase.jl/stable/types.html#ManifoldsBase.AbstractManifold) `M`.
 """
 TangentSpace(M::AbstractManifold, p) = VectorSpaceAtPoint(TangentBundleFibers(M), p)
 
@@ -106,7 +106,7 @@ end
     struct SasakiRetraction <: AbstractRetractionMethod end
 
 Exponential map on [`TangentBundle`](@ref) computed via Euler integration as described
-in [^Muralidharan2012]. The system of equations for $\gamma : ℝ \to T\mathcal M$ such that
+in [MuralidharanFlecther:2012](@cite). The system of equations for $\gamma : ℝ \to T\mathcal M$ such that
 $\gamma(1) = \exp_{p,X}(X_M, X_F)$ and $\gamma(0)=(p, X)$ reads
 
 ```math
@@ -120,11 +120,6 @@ where $R$ is the Riemann curvature tensor (see [`riemann_tensor`](@ref)).
     SasakiRetraction(L::Int)
 
 In this constructor `L` is the number of integration steps.
-
-[^Muralidharan2012]:
-    > P. Muralidharan and P. T. Fletcher, “Sasaki Metrics for Analysis of Longitudinal Data
-    > on Manifolds,” Proc IEEE Comput Soc Conf Comput Vis Pattern Recognit, vol. 2012,
-    > pp. 1027–1034, Jun. 2012, doi: [10.1109/CVPR.2012.6247780](https://doi.org/10.1109/CVPR.2012.6247780).
 """
 struct SasakiRetraction <: AbstractRetractionMethod
     L::Int
@@ -209,15 +204,11 @@ end
 """
     TangentBundle{𝔽,M} = VectorBundle{𝔽,TangentSpaceType,M} where {𝔽,M<:AbstractManifold{𝔽}}
 
-Tangent bundle for manifold of type `M`, as a manifold with the Sasaki metric [^Sasaki1958].
+Tangent bundle for manifold of type `M`, as a manifold with the Sasaki metric [Sasaki:1958](@cite).
 
 Exact retraction and inverse retraction can be approximated using [`VectorBundleProductRetraction`](@ref),
 [`VectorBundleInverseProductRetraction`](@ref) and [`SasakiRetraction`](@ref).
 [`VectorBundleProductVectorTransport`](@ref) can be used as a vector transport.
-
-[^Sasaki1958]:
-    > S. Sasaki, “On the differential geometry of tangent bundles of Riemannian manifolds,”
-    > Tohoku Math. J. (2), vol. 10, no. 3, pp. 338–354, 1958, doi: [10.2748/tmj/1178244668](https://doi.org/10.2748/tmj/1178244668).
 
 # Constructors
 
@@ -603,7 +594,7 @@ end
 @doc raw"""
     injectivity_radius(M::TangentSpaceAtPoint)
 
-Return the injectivity radius on the [`TangentSpaceAtPoint`](@ref Manifolds.TangentSpaceAtPoint) `M`, which is $∞$.
+Return the injectivity radius on the [`TangentSpaceAtPoint`](@ref) `M`, which is $∞$.
 """
 injectivity_radius(::TangentSpaceAtPoint) = Inf
 
@@ -635,8 +626,8 @@ function inner(B::VectorBundleFibers, p, X, Y)
         "vectors of types $(typeof(X)) and $(typeof(Y)).",
     )
 end
-inner(B::VectorBundleFibers{<:TangentSpaceType}, p, X, Y) = inner(B.manifold, p, X, Y)
-function inner(B::VectorBundleFibers{<:CotangentSpaceType}, p, X, Y)
+inner(B::TangentBundleFibers, p, X, Y) = inner(B.manifold, p, X, Y)
+function inner(B::CotangentBundleFibers, p, X, Y)
     return inner(B.manifold, p, sharp(B.manifold, p, X), sharp(B.manifold, p, Y))
 end
 @doc raw"""
@@ -701,7 +692,7 @@ function inverse_retract_product!(B::VectorBundle, X, p, q)
     py, Vy = submanifold_components(B.manifold, q)
     VXM, VXF = submanifold_components(B.manifold, X)
     log!(B.manifold, VXM, px, py)
-    vector_transport_to!(B.manifold, VXF, py, Vy, px, B.vector_transport.method_vector)
+    vector_transport_to!(B.fiber, VXF, py, Vy, px, B.vector_transport.method_vector)
     copyto!(VXF, VXF - Vx)
     return X
 end
@@ -726,7 +717,7 @@ end
 """
     is_flat(::TangentSpaceAtPoint)
 
-Return true. [`TangentSpaceAtPoint`](@ref Manifolds.TangentSpaceAtPoint) is a flat manifold.
+Return true. [`TangentSpaceAtPoint`](@ref) is a flat manifold.
 """
 is_flat(::TangentSpaceAtPoint) = true
 """
@@ -762,7 +753,7 @@ Norm of the vector `X` from the vector space of type `B.fiber`
 at point `p` from manifold `B.manifold`.
 """
 LinearAlgebra.norm(B::VectorBundleFibers, p, X) = sqrt(inner(B, p, X, X))
-LinearAlgebra.norm(B::VectorBundleFibers{<:TangentSpaceType}, p, X) = norm(B.manifold, p, X)
+LinearAlgebra.norm(B::TangentBundleFibers, p, X) = norm(B.manifold, p, X)
 LinearAlgebra.norm(M::VectorSpaceAtPoint, p, X) = norm(M.fiber.manifold, M.point, X)
 
 function parallel_transport_to!(M::TangentSpaceAtPoint, Y, p, X, q)
@@ -854,7 +845,7 @@ function project(B::VectorBundleFibers, p, X)
     return project!(B, Y, p, X)
 end
 
-function project!(B::VectorBundleFibers{<:TangentSpaceType}, Y, p, X)
+function project!(B::TangentBundleFibers, Y, p, X)
     return project!(B.manifold, Y, p, X)
 end
 function project!(B::VectorBundleFibers, Y, p, X)
@@ -867,11 +858,11 @@ function Random.rand!(rng::AbstractRNG, M::VectorBundle, pX; vector_at=nothing)
     pXM, pXF = submanifold_components(M.manifold, pX)
     if vector_at === nothing
         rand!(rng, M.manifold, pXM)
-        rand!(rng, M.manifold, pXF; vector_at=pXM)
+        rand!(rng, VectorSpaceAtPoint(M.fiber, pXM), pXF)
     else
         vector_atM, vector_atF = submanifold_components(M.manifold, vector_at)
         rand!(rng, M.manifold, pXM; vector_at=vector_atM)
-        rand!(rng, M.manifold, pXF; vector_at=vector_atM)
+        rand!(rng, VectorSpaceAtPoint(M.fiber, pXM), pXF; vector_at=vector_atF)
     end
     return pX
 end
@@ -1112,6 +1103,15 @@ end
 function vector_transport_direction(M::VectorBundle, p, X, d)
     return vector_transport_direction(M, p, X, d, M.vector_transport)
 end
+function vector_transport_direction(
+    M::TangentBundleFibers,
+    p,
+    X,
+    d,
+    m::AbstractVectorTransportMethod,
+)
+    return vector_transport_direction(M.manifold, p, X, d, m)
+end
 
 function _vector_transport_direction(
     M::VectorBundle,
@@ -1125,7 +1125,7 @@ function _vector_transport_direction(
     dx, dVx = submanifold_components(M.manifold, d)
     return ArrayPartition(
         vector_transport_direction(M.manifold, px, VXM, dx, m.method_point),
-        vector_transport_direction(M.manifold, px, VXF, dx, m.method_vector),
+        vector_transport_direction(M.fiber, px, VXF, dx, m.method_vector),
     )
 end
 
@@ -1213,6 +1213,17 @@ function vector_transport_to!(
 )
     return copyto!(M.fiber.manifold, Y, p, X)
 end
+function vector_transport_to!(
+    M::TangentBundleFibers,
+    Y,
+    p,
+    X,
+    q,
+    m::AbstractVectorTransportMethod,
+)
+    vector_transport_to!(M.manifold, Y, p, X, q, m)
+    return Y
+end
 
 @inline function Base.view(x::ArrayPartition, M::VectorBundle, s::Symbol)
     (s === :point) && return x.x[1]
@@ -1242,9 +1253,22 @@ function zero_vector!(B::VectorBundleFibers, X, p)
         "zero_vector! not implemented for vector space family of type $(typeof(B)).",
     )
 end
-function zero_vector!(B::VectorBundleFibers{<:TangentSpaceType}, X, p)
+function zero_vector!(B::TangentBundleFibers, X, p)
     return zero_vector!(B.manifold, X, p)
 end
+
+@doc raw"""
+    Y = Weingarten(M::VectorSpaceAtPoint, p, X, V)
+    Weingarten!(M::VectorSpaceAtPoint, Y, p, X, V)
+
+Compute the Weingarten map ``\mathcal W_p`` at `p` on the [`VectorSpaceAtPoint`](@ref) `M` with respect to the
+tangent vector ``X \in T_p\mathcal M`` and the normal vector ``V \in N_p\mathcal M``.
+
+Since this a flat space by itself, the result is always the zero tangent vector.
+"""
+Weingarten(::VectorSpaceAtPoint, p, X, V)
+
+Weingarten!(::VectorSpaceAtPoint, Y, p, X, V) = fill!(Y, 0)
 
 @doc raw"""
     zero_vector(B::VectorBundle, p)

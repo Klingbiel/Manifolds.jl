@@ -1,4 +1,4 @@
-# Sphere and unit norm arrays
+# [Sphere and unit norm arrays](@id SphereSection)
 
 ```@docs
 AbstractSphere
@@ -61,4 +61,11 @@ pts2 =  [ [1.0, 0.0, 0.0], [0.0, -1.0, 0.0], [0.0, 0.0, 1.0] ]
 p3 = 1/sqrt(3) .* [1.0, -1.0, 1.0]
 vecs = log.(Ref(M), pts2, Ref(p3))
 plot!(scene, M, pts2, vecs; wireframe = false, linewidth=1.5)
+```
+
+## Literature
+
+```@bibliography
+Pages = ["manifolds/sphere.md"]
+Canonical=false
 ```

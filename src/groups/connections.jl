@@ -3,13 +3,7 @@
     AbstractCartanSchoutenConnection
 
 Abstract type for Cartan-Schouten connections, that is connections whose geodesics
-going through group identity are one-parameter subgroups. See[^Pennec2020] for details.
-
-[^Pennec2020]:
-    > X. Pennec and M. Lorenzi, “5 - Beyond Riemannian geometry: The affine connection
-    > setting for transformation groups,” in Riemannian Geometric Statistics in Medical Image
-    > Analysis, X. Pennec, S. Sommer, and T. Fletcher, Eds. Academic Press, 2020, pp. 169–229.
-    > doi: [10.1016/B978-0-12-814725-2.00012-1](https://doi.org/10.1016/B978-0-12-814725-2.00012-1).
+going through group identity are one-parameter subgroups. See [PennecLorenzi:2020](@cite) for details.
 """
 abstract type AbstractCartanSchoutenConnection <: AbstractAffineConnection end
 
@@ -50,7 +44,7 @@ const CartanSchoutenZeroGroup{𝔽,M} = ConnectionManifold{𝔽,M,CartanSchouten
     exp(M::ConnectionManifold{𝔽,<:AbstractDecoratorManifold{𝔽},<:AbstractCartanSchoutenConnection}, p, X) where {𝔽}
 
 Compute the exponential map on the [`ConnectionManifold`](@ref) `M` with a Cartan-Schouten
-connection. See Sections 5.3.2 and 5.3.3 of [^Pennec2020] for details.
+connection. See Sections 5.3.2 and 5.3.3 of [PennecLorenzi:2020](@cite) for details.
 """
 function exp(
     M::ConnectionManifold{
@@ -61,7 +55,7 @@ function exp(
     p,
     X,
 ) where {𝔽}
-    Y = inverse_translate_diff(M.manifold, p, p, X, LeftAction())
+    Y = inverse_translate_diff(M.manifold, p, p, X, LeftForwardAction())
     return compose(M.manifold, p, exp_lie(M.manifold, Y))
 end
 function exp(
@@ -87,7 +81,7 @@ function exp!(
     p,
     X,
 ) where {𝔽}
-    Y = inverse_translate_diff(M.manifold, p, p, X, LeftAction())
+    Y = inverse_translate_diff(M.manifold, p, p, X, LeftForwardAction())
     return compose!(M.manifold, q, p, exp_lie(M.manifold, Y))
 end
 
@@ -109,7 +103,7 @@ end
     log(M::ConnectionManifold{𝔽,<:AbstractDecoratorManifold{𝔽},<:AbstractCartanSchoutenConnection}, p, q) where {𝔽}
 
 Compute the logarithmic map on the [`ConnectionManifold`](@ref) `M` with a Cartan-Schouten
-connection. See Sections 5.3.2 and 5.3.3 of [^Pennec2020] for details.
+connection. See Sections 5.3.2 and 5.3.3 of [PennecLorenzi:2020](@cite) for details.
 """
 function log(
     M::ConnectionManifold{
@@ -122,7 +116,7 @@ function log(
 ) where {𝔽}
     pinvq = compose(M.manifold, inv(M.manifold, p), q)
     Y = log_lie(M.manifold, pinvq)
-    return translate_diff(M.manifold, p, Identity(M.manifold), Y, LeftAction())
+    return translate_diff(M.manifold, p, Identity(M.manifold), Y, LeftForwardAction())
 end
 
 function log!(
@@ -144,44 +138,44 @@ end
     parallel_transport_to(M::CartanSchoutenMinusGroup, p, X, q)
 
 Transport tangent vector `X` at point `p` on the group manifold `M` with the
-[`CartanSchoutenMinus`](@ref) connection to point `q`. See [^Pennec2020] for details.
+[`CartanSchoutenMinus`](@ref) connection to point `q`. See [PennecLorenzi:2020](@cite) for details.
 """
 function parallel_transport_to(M::CartanSchoutenMinusGroup, p, X, q)
-    return inverse_translate_diff(M.manifold, q, p, X, LeftAction())
+    return inverse_translate_diff(M.manifold, q, p, X, LeftForwardAction())
 end
 
 function parallel_transport_to!(M::CartanSchoutenMinusGroup, Y, p, X, q)
-    return inverse_translate_diff!(M.manifold, Y, q, p, X, LeftAction())
+    return inverse_translate_diff!(M.manifold, Y, q, p, X, LeftForwardAction())
 end
 
 """
     vector_transport_to(M::CartanSchoutenPlusGroup, p, X, q)
 
 Transport tangent vector `X` at point `p` on the group manifold `M` with the
-[`CartanSchoutenPlus`](@ref) connection to point `q`. See [^Pennec2020] for details.
+[`CartanSchoutenPlus`](@ref) connection to point `q`. See [PennecLorenzi:2020](@cite) for details.
 """
 parallel_transport_to(M::CartanSchoutenPlusGroup, p, X, q)
 
 function parallel_transport_to!(M::CartanSchoutenPlusGroup, Y, p, X, q)
-    return inverse_translate_diff!(M.manifold, Y, q, p, X, RightAction())
+    return inverse_translate_diff!(M.manifold, Y, q, p, X, RightBackwardAction())
 end
 
 """
     parallel_transport_direction(M::CartanSchoutenZeroGroup, ::Identity, X, d)
 
 Transport tangent vector `X` at identity on the group manifold with the
-[`CartanSchoutenZero`](@ref) connection in the direction `d`. See [^Pennec2020] for details.
+[`CartanSchoutenZero`](@ref) connection in the direction `d`. See [PennecLorenzi:2020](@cite) for details.
 """
 function parallel_transport_direction(M::CartanSchoutenZeroGroup, p::Identity, X, d)
     dexp_half = exp_lie(M.manifold, d / 2)
-    Y = translate_diff(M.manifold, dexp_half, p, X, RightAction())
-    return translate_diff(M.manifold, dexp_half, p, Y, LeftAction())
+    Y = translate_diff(M.manifold, dexp_half, p, X, RightBackwardAction())
+    return translate_diff(M.manifold, dexp_half, p, Y, LeftForwardAction())
 end
 
 function parallel_transport_direction!(M::CartanSchoutenZeroGroup, Y, p::Identity, X, d)
     dexp_half = exp_lie(M.manifold, d / 2)
-    translate_diff!(M.manifold, Y, dexp_half, p, X, RightAction())
-    return translate_diff!(M.manifold, Y, dexp_half, p, Y, LeftAction())
+    translate_diff!(M.manifold, Y, dexp_half, p, X, RightBackwardAction())
+    return translate_diff!(M.manifold, Y, dexp_half, p, Y, LeftForwardAction())
 end
 
 """

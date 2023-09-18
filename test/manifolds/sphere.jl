@@ -252,4 +252,34 @@ using ManifoldsBase: TFVector
         M = Sphere(2)
         @test riemann_tensor(M, [0, 1, 0], [1, 0, 0], [1, 0, 4], [0, 0, 1]) == [4, 0, 0]
     end
+
+    @testset "ManifoldDiff" begin
+        # ManifoldDiff
+        M = Sphere(2)
+        p = [1.0, 0.0, 0.0]
+        X = [0.0, 2.0, -1.0]
+        dpX = ManifoldDiff.diagonalizing_projectors(M, p, X)
+        @test dpX[1][1] == 0.0
+        @test dpX[1][2].X == normalize(X)
+        @test dpX[2][1] == 1.0
+        @test dpX[2][2].X == normalize(X)
+    end
+    @testset "Weingarten" begin
+        M = Sphere(2)
+        p = [1.0, 0.0, 0.0]
+        X = [0.0, 2.0, 0.0]
+        V = [0.3, 0.0, 0.0]
+        Y = -X * (p'V)
+        @test Weingarten(M, p, X, V) == Y
+    end
+
+    @testset "Volume density" begin
+        M = Sphere(2)
+        p = [1.0, 0.0, 0.0]
+        @test manifold_volume(Sphere(0)) ≈ 2
+        @test manifold_volume(Sphere(1)) ≈ 2 * π
+        @test manifold_volume(Sphere(2)) ≈ 4 * π
+        @test manifold_volume(Sphere(3)) ≈ 2 * π * π
+        @test volume_density(M, p, [0.0, 0.5, 0.5]) ≈ 0.9187253698655684
+    end
 end

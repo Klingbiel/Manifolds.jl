@@ -1,4 +1,4 @@
-# Symmetric positive definite matrices
+# [Symmetric positive definite matrices](@id SymmetricPositiveDefiniteSection)
 
 ```@docs
 SymmetricPositiveDefinite
@@ -13,7 +13,7 @@ The manifold can be equipped with different metrics
 ## Common and metric independent functions
 
 ```@autodocs
-Modules = [Manifolds]
+Modules = [Manifolds, ManifoldsBase]
 Pages = ["manifolds/SymmetricPositiveDefinite.jl"]
 Order = [:function]
 Public=true
@@ -37,7 +37,7 @@ Pages = ["manifolds/SymmetricPositiveDefiniteAffineInvariant.jl"]
 Order = [:function]
 ```
 
-## Bures-Wasserstein metric
+## [Bures-Wasserstein metric](@id BuresWassersteinMetricSection)
 
 ```@autodocs
 Modules = [Manifolds]

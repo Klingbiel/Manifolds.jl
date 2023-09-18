@@ -62,18 +62,7 @@ exp_lie(::GeneralUnitaryMultiplicationGroup{2,ℝ}, X)
      exp_lie(G::SpecialOrthogonal{4}, X)
 
 Compute the group exponential map on the [`Orthogonal`](@ref)`(4)` or the [`SpecialOrthogonal`](@ref) group.
-The algorithm used is a more numerically stable form of those proposed in [^Gallier2002], [^Andrica2013].
-
-[^Gallier2002]:
-    > Gallier J.; Xu D.; Computing exponentials of skew-symmetric matrices
-    > and logarithms of orthogonal matrices.
-    > International Journal of Robotics and Automation (2002), 17(4), pp. 1-11.
-    > [pdf](http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.35.3205).
-[^Andrica2013]:
-    > Andrica D.; Rohan R.-A.; Computing the Rodrigues coefficients of the
-    > exponential map of the Lie groups of matrices.
-    > Balkan Journal of Geometry and Its Applications (2013), 18(2), pp. 1-2.
-    > [pdf](https://www.emis.de/journals/BJGA/v18n2/B18-2-an.pdf).
+The algorithm used is a more numerically stable form of those proposed in [GallierXu:2002](@cite), [AndricaRohan:2013](@cite).
 """
 exp_lie(::GeneralUnitaryMultiplicationGroup{4,ℝ}, X)
 
@@ -144,13 +133,34 @@ function exp_lie!(::GeneralUnitaryMultiplicationGroup{4,ℝ}, q, X)
     return q
 end
 
-inverse_translate(G::GeneralUnitaryMultiplicationGroup, p, q, ::LeftAction) = inv(G, p) * q
-inverse_translate(G::GeneralUnitaryMultiplicationGroup, p, q, ::RightAction) = q * inv(G, p)
+function inverse_translate(G::GeneralUnitaryMultiplicationGroup, p, q, ::LeftForwardAction)
+    return inv(G, p) * q
+end
+function inverse_translate(
+    G::GeneralUnitaryMultiplicationGroup,
+    p,
+    q,
+    ::RightBackwardAction,
+)
+    return q * inv(G, p)
+end
 
-function inverse_translate!(G::GeneralUnitaryMultiplicationGroup, x, p, q, ::LeftAction)
+function inverse_translate!(
+    G::GeneralUnitaryMultiplicationGroup,
+    x,
+    p,
+    q,
+    ::LeftForwardAction,
+)
     return mul!(x, inv(G, p), q)
 end
-function inverse_translate!(G::GeneralUnitaryMultiplicationGroup, x, p, q, ::RightAction)
+function inverse_translate!(
+    G::GeneralUnitaryMultiplicationGroup,
+    x,
+    p,
+    q,
+    ::RightBackwardAction,
+)
     return mul!(x, q, inv(G, p))
 end
 
@@ -258,6 +268,10 @@ function log_lie!(
     return project!(G, X, Identity(G), X)
 end
 
+function manifold_volume(M::GeneralUnitaryMultiplicationGroup)
+    return manifold_volume(M.manifold)
+end
+
 function Random.rand!(G::GeneralUnitaryMultiplicationGroup, pX; kwargs...)
     rand!(G.manifold, pX; kwargs...)
     return pX
@@ -267,9 +281,47 @@ function Random.rand!(rng::AbstractRNG, G::GeneralUnitaryMultiplicationGroup, pX
     return pX
 end
 
-function translate_diff!(G::GeneralUnitaryMultiplicationGroup, Y, p, q, X, ::LeftAction)
-    return copyto!(G, Y, p, X)
+function translate_diff!(
+    G::GeneralUnitaryMultiplicationGroup,
+    Y,
+    p,
+    q,
+    X,
+    ::LeftForwardAction,
+)
+    return copyto!(G, Y, X)
 end
-function translate_diff!(G::GeneralUnitaryMultiplicationGroup, Y, p, q, X, ::RightAction)
-    return copyto!(G, Y, p, inv(G, p) * X * p)
+function translate_diff!(
+    G::GeneralUnitaryMultiplicationGroup,
+    Y,
+    p,
+    q,
+    X,
+    ::RightForwardAction,
+)
+    return copyto!(G, Y, X)
+end
+function translate_diff!(
+    G::GeneralUnitaryMultiplicationGroup,
+    Y,
+    p,
+    q,
+    X,
+    ::LeftBackwardAction,
+)
+    return copyto!(G, Y, p * X * inv(G, p))
+end
+function translate_diff!(
+    G::GeneralUnitaryMultiplicationGroup,
+    Y,
+    p,
+    q,
+    X,
+    ::RightBackwardAction,
+)
+    return copyto!(G, Y, inv(G, p) * X * p)
+end
+
+function volume_density(M::GeneralUnitaryMultiplicationGroup, p, X)
+    return volume_density(M.manifold, p, X)
 end
