@@ -12,7 +12,7 @@ apa^{\mathrm{H}} \geq 0 \text{ for all } a ∈ 𝔽
 ````
 where $\cdot^{\mathrm{H}}$ denotes the Hermitian, i.e. complex conjugate transpose,
 and the field $𝔽 ∈ \{ ℝ, ℂ\}$.
-We sometimes $\operatorname{SPS}_{k,𝔽}(n)$, when distinguishing the real- and complex-valued
+We sometimes write $\operatorname{SPS}_{k,𝔽}(n)$, when distinguishing the real- and complex-valued
 manifold is important.
 
 An element is represented by $q ∈ 𝔽^{n × k}$ from the factorization $p = qq^{\mathrm{H}}$.
@@ -129,7 +129,7 @@ end
 @doc raw"""
     isapprox(M::SymmetricPositiveSemidefiniteFixedRank, p, q; kwargs...)
 
-test, whether two points `p`, `q` are (approximately) nearly the same.
+Test whether two points `p`, `q` are (approximately) nearly the same.
 Since this is a quotient manifold in the embedding, the test is performed by checking
 their distance, if they are not the same, i.e. that $d_{\mathcal M}(p,q) \approx 0$, where
 the comparison is performed with the classical `isapprox`.
@@ -184,7 +184,7 @@ Return the dimension of the [`SymmetricPositiveSemidefiniteFixedRank`](@ref) mat
 \end{aligned}
 ````
 
-where the last $k^2$ is due to the zero imaginary part for Hermitian matrices diagonal
+where the last $k^2$ is due to the zero imaginary part for Hermitian matrices' diagonal.
 """
 manifold_dimension(::SymmetricPositiveSemidefiniteFixedRank)
 
@@ -211,7 +211,7 @@ end
 """
      vector_transport_to(M::SymmetricPositiveSemidefiniteFixedRank, p, X, q)
 
- transport the tangent vector `X` at `p` to `q` by projecting it onto the tangent space
+ Transport the tangent vector `X` at `p` to `q` by projecting it onto the tangent space
  at `q`.
  """
 vector_transport_to(
@@ -230,7 +230,7 @@ end
 @doc raw"""
      zero_vector(M::SymmetricPositiveSemidefiniteFixedRank, p)
 
-returns the zero tangent vector in the tangent space of the symmetric positive
+Returns the zero tangent vector in the tangent space of the symmetric positive
 definite matrix `p` on the [`SymmetricPositiveSemidefiniteFixedRank`](@ref) manifold `M`.
 """
 zero_vector(::SymmetricPositiveSemidefiniteFixedRank, ::Any...)
