@@ -24,8 +24,8 @@ and consists of all symmetric matrices with zero trace
         X \in \mathbb R^{n×n} \big|\ X=X^\mathrm{T} \text{ and } \operatorname{tr}(p) = 0
     \bigr\},
 ```
-since for a constant determinant we require that `0 = D\det(p)[Z] = \det(p)\operatorname{tr}(p^{-1}Z)` for all tangent vectors ``Z``.
-Additionally we store the tangent vectors as `X=p^{-1}Z`, i.e. symmetric matrices.
+since for a constant determinant we require that ``0 = D\det(p)[Z] = \det(p)\operatorname{tr}(p^{-1}Z)`` for all tangent vectors ``Z``.
+Additionally we store the tangent vectors as ``X=p^{-1}Z``, i.e. symmetric matrices.
 
 # Constructor
 
@@ -121,7 +121,7 @@ Project the symmetric positive definite (s.p.d.) matrix `p` from the embedding o
 The formula reads
 
 ```math
-q = \Bigl(\frac{d}{\det(p)}\Bigr)^{\frac{1}{n}}p
+q = \Bigl(\frac{d}{\det(p)}\Bigr)^{\frac{1}{n}}p.
 ```
 """
 project(M::SPDFixedDeterminant, p)
