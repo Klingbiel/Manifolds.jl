@@ -17,7 +17,7 @@ Pages = ["manifolds/Hyperbolic.jl"]
 Order = [:type, :function]
 ```
 
-## [hyperboloid model](@id hyperboloid_model)
+## [Hyperboloid model](@id hyperboloid_model)
 
 ```@autodocs
 Modules = [Manifolds]

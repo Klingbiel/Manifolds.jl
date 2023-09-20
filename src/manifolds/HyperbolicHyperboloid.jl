@@ -73,13 +73,13 @@ convert(::Type{AbstractVector}, p::HyperboloidPoint) = p.value
     convert(::Type{HyperboloidPoint}, p::PoincareBallPoint)
     convert(::Type{AbstractVector}, p::PoincareBallPoint)
 
-convert a point [`PoincareBallPoint`](@ref) `x` (from $ℝ^n$) from the
+Convert a point [`PoincareBallPoint`](@ref) `x` (from $ℝ^n$) from the
 Poincaré ball model of the [`Hyperbolic`](@ref) manifold $\mathcal H^n$ to a [`HyperboloidPoint`](@ref) $π(p) ∈ ℝ^{n+1}$.
 The isometry is defined by
 
 ````math
 π(p) = \frac{1}{1-\lVert p \rVert^2}
-\begin{pmatrix}2p_1\\⋮\\2p_n\\1+\lVert p \rVert^2\end{pmatrix}
+\begin{pmatrix}2p_1\\⋮\\2p_n\\1+\lVert p \rVert^2\end{pmatrix}.
 ````
 
 Note that this is also used, when the type to convert to is a vector.
@@ -95,7 +95,7 @@ end
     convert(::Type{HyperboloidPoint}, p::PoincareHalfSpacePoint)
     convert(::Type{AbstractVector}, p::PoincareHalfSpacePoint)
 
-convert a point [`PoincareHalfSpacePoint`](@ref) `p` (from $ℝ^n$) from the
+Convert a point [`PoincareHalfSpacePoint`](@ref) `p` (from $ℝ^n$) from the
 Poincaré half plane model of the [`Hyperbolic`](@ref) manifold $\mathcal H^n$ to a [`HyperboloidPoint`](@ref) $π(p) ∈ ℝ^{n+1}$.
 
 This is done in two steps, namely transforming it to a Poincare ball point and from there further on to a Hyperboloid point.
@@ -167,7 +167,7 @@ end
     convert(::Type{HyperboloidTVector}, p::PoincareHalfSpacePoint, X::PoincareHalfSpaceTVector)
     convert(::Type{AbstractVector}, p::PoincareHalfSpacePoint, X::PoincareHalfSpaceTVector)
 
-convert a point [`PoincareHalfSpaceTVector`](@ref) `X` (from $ℝ^n$) at `p` from the
+Convert a point [`PoincareHalfSpaceTVector`](@ref) `X` (from $ℝ^n$) at `p` from the
 Poincaré half plane model of the [`Hyperbolic`](@ref) manifold $\mathcal H^n$ to a
 [`HyperboloidTVector`](@ref) $π(p) ∈ ℝ^{n+1}$.
 
@@ -198,7 +198,7 @@ end
         (p,X)::Tuple{PoincareHalfSpacePoint, PoincareHalfSpaceTVector}
     ) where {T<:AbstractVector}
 
-convert a point [`PoincareHalfSpaceTVector`](@ref) `X` (from $ℝ^n$) at `p` from the
+Convert a point [`PoincareHalfSpaceTVector`](@ref) `X` (from $ℝ^n$) at `p` from the
 Poincaré half plane model of the [`Hyperbolic`](@ref) manifold $\mathcal H^n$
 to a tuple of a [`HyperboloidPoint`](@ref) and a [`HyperboloidTVector`](@ref) $π(p) ∈ ℝ^{n+1}$
 simultaneously.
